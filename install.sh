@@ -36,9 +36,10 @@ setuid 65535
 flush
 auth strong
 
+users $(awk -F "/" 'BEGIN{ORS="";} {print $1 ":CL:" $2 " "}' ${WORKDATA})
 
 $(awk -F "/" '{print "auth strong\n" \
-
+"allow " $1 "\n" \
 "proxy -6 -n -a -p" $4 " -i" $3 " -e"$5"\n" \
 "flush\n"}' ${WORKDATA})
 EOF
@@ -46,7 +47,7 @@ EOF
 
 gen_proxy_file_for_user() {
     cat >proxy.txt <<EOF
-$(awk -F "/" '{print $3 ":" $4 ": }' ${WORKDATA})
+$(awk -F "/" '{print $3 ":" $4 ":" $1 ":" $2 }' ${WORKDATA})
 EOF
 }
 
@@ -55,14 +56,14 @@ upload_proxy() {
     zip --password $PASS proxy.zip proxy.txt
     URL=$(curl -s --upload-file proxy.zip https://transfer.sh/proxy.zip)
 
-    echo "Proxy is ready! Format IP:PORT"
+    echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
     echo "Download zip archive from: ${URL}"
     echo "Password: ${PASS}"
 
 }
 gen_data() {
     seq $FIRST_PORT $LAST_PORT | while read port; do
-        echo "$IP4/$port/$(gen64 $IP6)/$IFACE"
+        echo "usr$(random)/pass$(random)/$IP4/$port/$(gen64 $IP6)"
     done
 }
 
